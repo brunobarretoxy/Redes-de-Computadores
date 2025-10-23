@@ -1,0 +1,60 @@
+class IPAddress:
+    def __init__(self, ip_str, mask_str):
+        self.ip_str = ip_str
+        self.mask_str = mask_str
+        
+        self._ip_int = self._ip_to_int(ip_str)
+        self._mask_int = self._ip_to_int(mask_str)
+        
+        self._mask_bits = self._calculate_mask_bits(self._mask_int)
+        
+        self._network_int = self._ip_int & self._mask_int
+        self.rede = self._int_to_ip(self._network_int)
+        
+        self._host_complement_int = 0xFFFFFFFF ^ self._mask_int
+        self._broadcast_int = self._network_int | self._host_complement_int
+        self.broadcast = self._int_to_ip(self._broadcast_int)
+
+
+    def _ip_to_int(self, ip_str):
+        try:
+            octets = [int(octet) for octet in ip_str.split('.')]
+            if len(octets) != 4 or any(not (0 <= o <= 255) for o in octets):
+                raise ValueError("Formato de IP inválido ou octetos fora do intervalo.")
+            
+            return (octets[0] << 24) + \
+                   (octets[1] << 16) + \
+                   (octets[2] << 8) + \
+                    octets[3]
+        except Exception as e:
+            raise ValueError(f"Erro ao converter IP '{ip_str}' para inteiro: {e}")
+
+    def _int_to_ip(self, ip_int):
+        return f"{(ip_int >> 24) & 0xFF}." \
+               f"{(ip_int >> 16) & 0xFF}." \
+               f"{(ip_int >> 8) & 0xFF}." \
+               f"{ip_int & 0xFF}"
+
+    def _calculate_mask_bits(self, mask_int):
+        return bin(mask_int).count('1')
+
+    def pertence_a_rede(self, ip_string):
+        try:
+            ip_a_verificar_int = self._ip_to_int(ip_string)
+            
+            network_a_verificar_int = ip_a_verificar_int & self._mask_int
+            
+            return network_a_verificar_int == self._network_int
+        except ValueError:
+            return False
+
+    def __str__(self):
+        return f"{self.ip_str}/{self._mask_bits}"
+
+# Exemplo de Uso (sem comentários)
+ip1 = IPAddress("192.168.1.10", "255.255.255.0")
+print(ip1)
+print(ip1.rede)
+print(ip1.broadcast)
+print(ip1.pertence_a_rede("192.168.1.55"))
+print(ip1.pertence_a_rede("192.168.2.1"))
